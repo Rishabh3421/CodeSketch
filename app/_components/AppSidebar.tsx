@@ -1,4 +1,7 @@
-import React from 'react'
+"use client";
+
+import React, { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import {
     Sidebar,
     SidebarContent,
@@ -43,13 +46,13 @@ const items = [
 ]
 
 export function AppSidebar() {
-    const path = window.location.pathname;
+    const path = usePathname();
     return (
         <Sidebar>
             <SidebarHeader>
                 <div className='p-4'>
                     <Image src={'./logo.svg'} alt='logo' width={100} height={100}
-                        className='w-full h-full' />
+                        className='w-full h-full' priority />
                     <h2 className='text-sm text-gray-400 text-center'>Build Awesome</h2>
                 </div>
             </SidebarHeader>
@@ -74,7 +77,7 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
             <SidebarFooter>
-                <h2 className='p-8 ml-3 text-gray-400 text-sm'>Made with ❤️ by Rishabh</h2>
+                <h2 className='p-2 ml-3 text-gray-500 text-sm'>Made with ❤️ by Rishabh</h2>
             </SidebarFooter>
         </Sidebar>
     )

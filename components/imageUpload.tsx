@@ -5,6 +5,9 @@ import React, { ChangeEvent, useState } from "react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
+import { createClient } from "@supabase/supabase-js";
+import { v4 as uuidv4 } from "uuid";
+import axios from "axios";
 
 import {
   Select,
@@ -13,27 +16,78 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useAuthContext } from "@/app/provider";
+
+// Supabase configuration
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 const ImageUpload = () => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const AIModels =[
-    {
-      name:"Gemini Google",
-      icon:"/google.png"
-    },{
-      name:"llama By Meta",
-      icon:"/meta.png" 
-    },
-    {
-      name:"Deepseek",
-      icon:"/deepseek.png"
-    }
-  ] 
+  const [file, setFile] = useState<File | null>(null);
+  const [model, setModel] = useState<string | null>(null);
+  const [description, setDescription] = useState<string | null>(null);
+  const { user } = useAuthContext(); // Get user details
 
+  const AIModels = [
+    { name: "Gemini Google", icon: "/google.png" },
+    { name: "Llama by Meta", icon: "/meta.png" },
+    { name: "Deepseek", icon: "/deepseek.png" },
+  ];
+
+  // Function to upload image to Supabase
+  const uploadImageToSupabase = async (file: File) => {
+    try {
+      const fileName = `wireframeImg/${Date.now()}-${file.name}`;
+      const { data, error } = await supabase.storage
+        .from("images")
+        .upload(fileName, file, { cacheControl: "3600", upsert: false });
+
+      if (error) throw new Error(error.message);
+      return supabase.storage.from("images").getPublicUrl(fileName).data.publicUrl;
+    } catch (error: any) {
+      console.error("Image upload error:", error.message);
+      alert(error.message);
+      return null;
+    }
+  };
+
+  // Function to handle conversion button click
+  const OnConvertToCodeButtonClick = async () => {
+    if (!file || !model || !description) {
+      alert("Please fill all required fields.");
+      return;
+    }
+
+    const imgUrl = await uploadImageToSupabase(file);
+    if (!imgUrl) return;
+
+    try {
+      const uid = uuidv4();
+      const response = await axios.post("/api/code-sketch", {
+        uid: uid,
+        model,
+        description,
+        imageUrl: imgUrl,
+        email: user?.email || "guest@example.com"
+      });
+
+      // console.log("Response:", response.data);
+      alert("Conversion successful!");
+    } catch (error: any) {
+      // console.error("Error:", error.response?.data || error.message);
+      alert("Error: " + (error.response?.data?.message || error.message));
+    }
+  };
+
+  // Function to handle image selection
   const onImgSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const imgUrl = URL.createObjectURL(files[0]);
+      setFile(files[0]);
       setPreviewUrl(imgUrl);
     }
   };
@@ -55,13 +109,7 @@ const ImageUpload = () => {
                 </h2>
               </label>
             </div>
-            <input
-              type="file"
-              className="hidden"
-              id="fileUpload"
-              multiple={false}
-              onChange={onImgSelect}
-            />
+            <input type="file" className="hidden" id="fileUpload" onChange={onImgSelect} />
           </div>
         ) : (
           <div className="relative p-5 border border-dashed">
@@ -81,9 +129,10 @@ const ImageUpload = () => {
             />
           </div>
         )}
+
         <div className="p-7 w-full border rounded-lg shadow-md">
           <h2 className="">Select AI Model</h2>
-          <Select>
+          <Select onValueChange={setModel}>
             <SelectTrigger className="w-[180px] mt-2 mb-4">
               <SelectValue placeholder="Models list" />
             </SelectTrigger>
@@ -91,7 +140,13 @@ const ImageUpload = () => {
               {AIModels.map((model, index) => (
                 <SelectItem key={index} value={model.name}>
                   <div className="flex flex-row gap-2">
-                    <Image className="object-contain" src={model.icon} alt={model.name} width={10} height={10}/>
+                    <Image
+                      className="object-contain"
+                      src={model.icon}
+                      alt={model.name}
+                      width={20}
+                      height={20}
+                    />
                     <h2>{model.name}</h2>
                   </div>
                 </SelectItem>
@@ -103,12 +158,13 @@ const ImageUpload = () => {
           <Textarea
             className="border-2 w-full border-dashed rounded-lg font-md shadow-sm p-5 mt-4 h-[200px] text-xl resize-none text-gray-900 placeholder-gray-400"
             placeholder="Write a brief description of your webpage..."
+            onChange={(e) => setDescription(e.target.value)}
           />
         </div>
       </div>
+
       <div className="mt-5 flex items-center justify-end">
-        <Button>
-          {" "}
+        <Button onClick={OnConvertToCodeButtonClick}>
           <WandSparkles /> Convert to Code
         </Button>
       </div>

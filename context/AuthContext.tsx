@@ -1,7 +1,8 @@
-import { User } from "firebase/auth";
+import { User } from "@supabase/supabase-js";
 import { createContext } from "react";
+
 interface AuthContextType {
     user: User | null;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | null>(null);
