@@ -1,12 +1,14 @@
 "use client";
 
-import { CloudUpload, X, WandSparkles } from "lucide-react";
+import { CloudUpload, X, WandSparkles, Loader2Icon } from "lucide-react";
 import React, { ChangeEvent, useState } from "react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
+import {AIModels} from ".././data/Constants"
 import { createClient } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 
 import {
@@ -29,13 +31,11 @@ const ImageUpload = () => {
   const [file, setFile] = useState<File | null>(null);
   const [model, setModel] = useState<string | null>(null);
   const [description, setDescription] = useState<string | null>(null);
-  const { user } = useAuthContext(); // Get user details
+  const { user } = useAuthContext();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
 
-  const AIModels = [
-    { name: "Gemini Google", icon: "/google.png" },
-    { name: "Llama by Meta", icon: "/meta.png" },
-    { name: "Deepseek", icon: "/deepseek.png" },
-  ];
+
 
   // Function to upload image to Supabase
   const uploadImageToSupabase = async (file: File) => {
@@ -46,7 +46,8 @@ const ImageUpload = () => {
         .upload(fileName, file, { cacheControl: "3600", upsert: false });
 
       if (error) throw new Error(error.message);
-      return supabase.storage.from("images").getPublicUrl(fileName).data.publicUrl;
+      return supabase.storage.from("images").getPublicUrl(fileName).data
+        .publicUrl;
     } catch (error: any) {
       console.error("Image upload error:", error.message);
       alert(error.message);
@@ -61,17 +62,18 @@ const ImageUpload = () => {
       return;
     }
 
+    setLoading(true);
     const imgUrl = await uploadImageToSupabase(file);
     if (!imgUrl) return;
 
+    var uid = uuidv4();
     try {
-      const uid = uuidv4();
       const response = await axios.post("/api/code-sketch", {
         uid: uid,
         model,
         description,
         imageUrl: imgUrl,
-        email: user?.email || "guest@example.com"
+        email: user?.email || "guest@example.com",
       });
 
       // console.log("Response:", response.data);
@@ -80,6 +82,8 @@ const ImageUpload = () => {
       // console.error("Error:", error.response?.data || error.message);
       alert("Error: " + (error.response?.data?.message || error.message));
     }
+    setLoading(false);
+    router.push("/view-code/" + uid);
   };
 
   // Function to handle image selection
@@ -109,7 +113,12 @@ const ImageUpload = () => {
                 </h2>
               </label>
             </div>
-            <input type="file" className="hidden" id="fileUpload" onChange={onImgSelect} />
+            <input
+              type="file"
+              className="hidden"
+              id="fileUpload"
+              onChange={onImgSelect}
+            />
           </div>
         ) : (
           <div className="relative p-5 border border-dashed">
@@ -164,8 +173,13 @@ const ImageUpload = () => {
       </div>
 
       <div className="mt-5 flex items-center justify-end">
-        <Button onClick={OnConvertToCodeButtonClick}>
-          <WandSparkles /> Convert to Code
+        <Button onClick={OnConvertToCodeButtonClick} disabled={loading}>
+          {loading ? (
+            <Loader2Icon className="animate-spin" />
+          ) : (
+            <WandSparkles />
+          )}
+          Convert to Code
         </Button>
       </div>
     </div>

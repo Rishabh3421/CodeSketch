@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/configs/db";
 import { CodeSketch } from "@/configs/schema";
+import { eq } from "drizzle-orm";
 
 export async function POST(req: NextRequest) {
     try {
@@ -23,4 +24,18 @@ export async function POST(req: NextRequest) {
         console.error("Error:", error.message);
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
+}
+
+export async function GET(req:NextRequest){
+    const reqUrl = req.url;
+    const {searchParams} = new URL(reqUrl);
+    const uid= searchParams?.get('uid');
+    if(uid){
+        const result = await db.select()
+        .from(CodeSketch)
+        .where(eq(CodeSketch.uid,uid))
+        return NextResponse.json(result[0])
+    } 
+    return NextResponse.json({error:"No Data Found"})
+
 }
