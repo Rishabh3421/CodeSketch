@@ -115,7 +115,7 @@ function Provider({ children }: { children: React.ReactNode }) {
         {
           name: user.displayName || "Anonymous",
           email: user.email || "No email",
-          profileImage: imageUrl || "/default-avatar.png", // Use default if no image
+          profileImage: imageUrl || "/default-avatar.png", 
           lastLogin: new Date().toISOString(),
         },
         { merge: true }
