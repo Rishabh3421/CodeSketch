@@ -15,6 +15,7 @@ export interface RECORD {
   imageURL: string;
   model: string;
   createdBy: string;
+  uid: string;
 }
 
 const ViewCode = () => {
@@ -29,121 +30,144 @@ const ViewCode = () => {
     if (uid) GetRecordInfo();
   }, [uid]);
 
-  const GetRecordInfo = async () => {
+  const GetRecordInfo = async (forceRegenerate = false) => {
     setLoading(true);
     setIsReady(false);
-    setCodeRes(""); // Clear previous results before new fetch
-
+    setCodeRes("");
     try {
       const result = await axios.get(`/api/code-sketch?uid=${uid}`);
       const response: RECORD | null = result?.data;
-
+  
       if (!response || !response.description) {
         console.error("Invalid record data:", response);
         return;
       }
-
+  
       setRecord(response);
-
-      if (!response.code) {
-        await GenerateCode(response);
-      } else {
+  
+     
+      if (response.code && !forceRegenerate) {
         setCodeRes(response.code);
         setIsReady(true);
+        setLoading(false);
+        return;
       }
+  
+      await GenerateCode(response);
     } catch (error) {
       console.error("Error fetching record:", error);
-    } finally {
-      setLoading(false);
     }
   };
-
+  
   const GenerateCode = async (record: RECORD) => {
     if (!record.description || !record.model || !record.imageURL) {
       console.error("Missing fields in record:", record);
       return;
     }
-
-    setLoading(true);
+  
     setCodeRes("");
     setIsReady(false);
-
+  
     try {
       const requestBody = {
-        description: `${record.description}: ${Constants.PROMPT}`,
+        description: `${record.description}: ${Constants.PROMPT_OLD}`,
         model: record.model,
         imageUrl: record.imageURL,
       };
-
-      console.log("Sending Request Body:", requestBody);
-
+  
       const res = await fetch("/api/ai-models", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
-
+  
       if (!res.ok) {
         console.error("API Error:", res.status, await res.text());
         return;
       }
-
+  
       const reader = res.body?.getReader();
       if (!reader) {
         console.error("Response body is null");
         return;
       }
-
+  
       const decoder = new TextDecoder();
-
+      let finalCode = "";
+      let loadingStopped = false;
+  
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-
+  
         let text = decoder.decode(value);
-
-        // Ensure valid JSON format
-        text = text.replace(/jsx|```/g, "").trim();
-
+        text = text.replace(/jsx|```|javascript|js/g, "").trim();
+  
         const lines = text
           .split("\n")
           .filter((line) => line.startsWith("data: "));
-
+  
         for (const line of lines) {
           try {
             const cleanData = line.replace("data: ", "").trim();
-
             if (cleanData === "[DONE]") continue;
-
+  
             if (!cleanData.startsWith("{") || !cleanData.endsWith("}")) {
-              console.warn("Skipping invalid JSON chunk:", cleanData);
               continue;
             }
-
+  
             const jsonData = JSON.parse(cleanData);
-
+  
             if (jsonData.choices && jsonData.choices[0].delta.content) {
-              setCodeRes((prev) => prev + jsonData.choices[0].delta.content);
+              const newContent = jsonData.choices[0].delta.content;
+              finalCode += newContent;
+              setCodeRes((prev) => prev + newContent);
+  
+              if (!loadingStopped) {
+                setLoading(false);
+                loadingStopped = true;
+              }
             }
           } catch (e) {
             console.error("Parsing Error:", e);
           }
         }
       }
+  
+      setIsReady(true);
+      await UpdateCodeDB(finalCode); 
+  
     } catch (error) {
       console.error("Error generating code:", error);
-    } finally {
       setIsReady(true);
-      setLoading(false);
     }
   };
+  
+  
+  const UpdateCodeDB = async (generatedCode: string) => {
+    if (!generatedCode) {
+      console.error("No code to update");
+      return;
+    }
+  
+    try {
+      await axios.put(`/api/code-sketch`, {
+        uid: record?.uid,
+        CodeResponse: generatedCode,
+      });
+      console.log("Code updated successfully");
+    } catch (error) {
+      console.error("Error updating code:", error);
+    }
+  };
+  
 
   return (
     <div>
       <AppHeader hidesidebar={true} />
       <div className="grid grid-cols-1 md:grid-cols-5 p-5 gap-10">
         <div>
-          <SelectionDetail record={record} />
+        <SelectionDetail record={record} isReady={isReady} regenerateCode={() => GetRecordInfo(true)} />
         </div>
         <div className="col-span-4">
           {loading ? (
@@ -152,7 +176,7 @@ const ViewCode = () => {
               <p>Analyzing the Image</p>
             </div>
           ) : (
-            <CodeEditor codeRes={codeRes} isReady={isReady} regenerateCode={GetRecordInfo} />
+            <CodeEditor codeRes={codeRes} isReady={isReady} />
           )}
         </div>
       </div>

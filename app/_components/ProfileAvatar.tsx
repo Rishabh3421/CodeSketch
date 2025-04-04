@@ -25,19 +25,28 @@ function ProfileAvatar() {
     return (
         <Popover>
             <PopoverTrigger>
-                {user?.user?.photoURL ? (
-                    <Image 
-                        src={user.user.photoURL} 
-                        alt="Profile" 
-                        width={35} 
-                        height={35} 
-                        className="rounded-full cursor-pointer" 
-                    />
-                ) : (
-                    <div className="w-[35px] h-[35px] rounded-full bg-gray-300 flex items-center justify-center">
-                        <span className="text-sm text-gray-600">?</span>
-                    </div>
-                )}
+                <div className="flex items-center gap-2 cursor-pointer">
+                    {/* Show name if available */}
+                    {user?.user?.displayName && (
+                        <span className="text-sm font-medium text-gray-800">
+                            {user.user.displayName}
+                        </span>
+                    )}
+
+                    {user?.user?.photoURL ? (
+                        <Image 
+                            src={user.user.photoURL} 
+                            alt="Profile" 
+                            width={35} 
+                            height={35} 
+                            className="rounded-full" 
+                        />
+                    ) : (
+                        <div className="w-[35px] h-[35px] rounded-full bg-gray-300 flex items-center justify-center">
+                            <span className="text-sm text-gray-600">?</span>
+                        </div>
+                    )}
+                </div>
             </PopoverTrigger>
             <PopoverContent className="w-[120px] max-w-sm">
                 <Button variant="ghost" onClick={handleLogout} className="w-full">

@@ -5,7 +5,7 @@ import React, { ChangeEvent, useState } from "react";
 import Image from "next/image";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
-import {AIModels} from ".././data/Constants"
+import { AIModels } from ".././data/Constants";
 import { createClient } from "@supabase/supabase-js";
 import { v4 as uuidv4 } from "uuid";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuthContext } from "@/app/provider";
+import { toast } from "sonner";
 
 // Supabase configuration
 const supabase = createClient(
@@ -34,8 +35,6 @@ const ImageUpload = () => {
   const { user } = useAuthContext();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-
-
 
   // Function to upload image to Supabase
   const uploadImageToSupabase = async (file: File) => {
@@ -76,14 +75,22 @@ const ImageUpload = () => {
         email: user?.email || "guest@example.com",
       });
 
-      // console.log("Response:", response.data);
-      alert("Conversion successful!");
+      if (
+        response.status === 403 ||
+        response.data?.error === "Not enough credits"
+      ) {
+        toast("Not enough credits to convert.");
+        setLoading(false);
+        return;
+      }
+      toast("Conversion successful!");
+      router.push("/view-code/" + uid);
     } catch (error: any) {
-      // console.error("Error:", error.response?.data || error.message);
-      alert("Error: " + (error.response?.data?.message || error.message));
+      const message = error.response?.data?.error || error.message;
+      toast("Error: " + message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    router.push("/view-code/" + uid);
   };
 
   // Function to handle image selection
