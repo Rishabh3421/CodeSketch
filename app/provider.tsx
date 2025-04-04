@@ -46,17 +46,17 @@ function Provider({ children }: { children: React.ReactNode }) {
   // Function to upload profile image to Supabase with exponential backoff
   const uploadToSupabase = async (photoURL: string | null) => {
     if (!photoURL) return null;
-
+  
     try {
       const fileName = `profile_${Date.now()}.jpg`;
-      
+  
       // Retry logic for fetching profile image
       let attempt = 0;
       let response;
       while (attempt < 3) {
         response = await fetch(photoURL);
         if (response.ok) break;
-
+  
         if (response.status === 429) {
           const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
           console.warn(`Google blocked request, retrying after ${delay}ms...`);
@@ -64,41 +64,43 @@ function Provider({ children }: { children: React.ReactNode }) {
           attempt++;
         } else {
           console.error("Fetching image failed:", response.status);
-          return null; 
+          return null;
         }
       }
-
-      if (!response || !response.ok) return null; 
-
+  
+      if (!response || !response.ok) return null;
+  
       const blob = await response.blob();
-      
+  
       attempt = 0;
       while (attempt < 3) {
         const { data, error } = await supabase.storage
           .from("images")
           .upload(fileName, blob, { contentType: "image/jpeg" });
-
+  
         if (!error) {
           return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${fileName}`;
         }
-
-        if (error.statusCode === 429) {
+  
+        // 🔥 FIX: Use `error.code` instead of `error.statusCode`
+        if (error.code === "429") {
           const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
           console.warn(`Supabase rate limit, retrying after ${delay}ms...`);
           await new Promise((res) => setTimeout(res, delay));
           attempt++;
         } else {
-          console.error("Supabase upload failed:", error);
+          console.error("Supabase upload failed:", error.message); // 🔥 FIX: Use `error.message`
           return null;
         }
       }
-
+  
       return null;
     } catch (error) {
       console.error("Upload failed:", error);
       return null;
     }
   };
+  
 
   // Function to store user in Firestore
   const storeUserInFirestore = async (user: User, imageUrl: string | null) => {
