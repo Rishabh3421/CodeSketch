@@ -51,7 +51,7 @@ export function AppSidebar() {
         <Sidebar>
             <SidebarHeader>
                 <div className='p-4'>
-                    <Image src={'/logo.png'} alt='logo' width={100} height={100}
+                    <Image src={'/logoooo.png'} alt='logo' width={200} height={200}
                         className='w-full h-full  object-contain' priority />
                     <h2 className='text-sm text-gray-900 font-sans text-center'>Where Creativity Meets Code</h2>
                 </div>

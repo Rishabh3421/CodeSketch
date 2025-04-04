@@ -20,7 +20,7 @@ export default function Home() {
             {/* <a className="flex-none text-xl font-semibold dark:text-white" href="#" aria-label="Brand">Brand</a> */}
             <div>
               {/* <button type="button" className="hs-collapse-toggle size-9 flex justify-center items-center text-sm font-semibold rounded-lg border border-gray-200 text-gray-800 hover:bg-gray-100 disabled:opacity-50 disabled:pointer-events-none dark:text-white dark:border-neutral-700 dark:hover:bg-neutral-700" data-hs-collapse="#navbar-collapse-with-animation" aria-controls="navbar-collapse-with-animation" aria-label="Toggle navigation"> */}
-              <Image src={'/logo.png'} alt="logo" width={150} height={150} />
+              <Image src={'/logoooo.png'} alt="logo" width={200} height={200} />
               {/* </button> */}
             </div>
           </div>
@@ -66,7 +66,7 @@ export default function Home() {
 
           <div className="mt-5 max-w-3xl text-center mx-auto">
             <p className="text-lg text-gray-600 dark:text-neutral-400">
-              Revolutionize your content creation with our AI-powered app, delivering engaging and high-quality apps in seconds.</p>
+            Code Sketch lets you turn ideas into interactive code effortlessly. Design, prototype, and build — all in one seamless flow.</p>
           </div>
 
 
