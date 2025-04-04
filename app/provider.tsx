@@ -5,6 +5,12 @@ import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import React, { useContext, useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import { StorageError } from "@supabase/storage-js";
+
+// Check available properties
+// const myError: StorageError = {} as any; 
+// console.log(myError);
+
 
 interface AuthContextType {
   user: User | null;
@@ -82,8 +88,8 @@ function Provider({ children }: { children: React.ReactNode }) {
           return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${fileName}`;
         }
   
-        // 🔥 FIX: Use `error.code` instead of `error.statusCode`
-        if (error.code === "429") {
+
+        if (error.name === "429") {
           const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
           console.warn(`Supabase rate limit, retrying after ${delay}ms...`);
           await new Promise((res) => setTimeout(res, delay));
@@ -122,17 +128,19 @@ function Provider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user }}>
+    <AuthContext.Provider value={{ user: user as any }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Custom hook to use auth
 export const useAuthContext = (): AuthContextType => {
-  const context = useContext(AuthContext);
+  const context = useContext(AuthContext); 
+  
   if (!context) throw new Error("useAuth must be used within an AuthProvider");
+
   return context;
 };
+
 
 export default Provider;
