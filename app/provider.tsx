@@ -1,7 +1,7 @@
 "use client";
 import { auth, db } from "@/configs/firebaseConfig";
 import { AuthContext } from "@/context/AuthContext";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import React, { useContext, useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
@@ -11,9 +11,9 @@ import { StorageError } from "@supabase/storage-js";
 // const myError: StorageError = {} as any; 
 // console.log(myError);
 
-
-interface AuthContextType {
-  user: User | null;
+// Define a local AuthContextType that matches what's in context/AuthContext.tsx
+interface LocalAuthContextType {
+  user: FirebaseUser | null;
 }
 
 // Initialize Supabase client
@@ -23,7 +23,7 @@ const supabase = createClient(
 );
 
 function Provider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -88,14 +88,14 @@ function Provider({ children }: { children: React.ReactNode }) {
           return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/images/${fileName}`;
         }
   
-
+        // Check for rate limiting using error.name instead of error.status
         if (error.name === "429") {
           const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
           console.warn(`Supabase rate limit, retrying after ${delay}ms...`);
           await new Promise((res) => setTimeout(res, delay));
           attempt++;
         } else {
-          console.error("Supabase upload failed:", error.message); // 🔥 FIX: Use `error.message`
+          console.error("Supabase upload failed:", error.message);
           return null;
         }
       }
@@ -107,9 +107,8 @@ function Provider({ children }: { children: React.ReactNode }) {
     }
   };
   
-
   // Function to store user in Firestore
-  const storeUserInFirestore = async (user: User, imageUrl: string | null) => {
+  const storeUserInFirestore = async (user: FirebaseUser, imageUrl: string | null) => {
     try {
       await setDoc(
         doc(db, "users", user.uid),
@@ -128,19 +127,17 @@ function Provider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user: user as any }}>
+    <AuthContext.Provider value={{ user }as any}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuthContext = (): AuthContextType => {
-  const context = useContext(AuthContext); 
-  
+// Custom hook to use auth
+export const useAuthContext = (): LocalAuthContextType => {
+  const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth must be used within an AuthProvider");
-
-  return context;
+  return context as LocalAuthContextType;
 };
-
 
 export default Provider;

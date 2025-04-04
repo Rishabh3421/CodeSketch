@@ -1,8 +1,8 @@
-import { User } from "@supabase/supabase-js";
 import { createContext } from "react";
+import type { User } from "@supabase/supabase-js"; 
 
-interface AuthContextType {
-    user: User | null;
+export interface AuthContextType {
+  user: User | null;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
