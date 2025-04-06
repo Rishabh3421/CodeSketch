@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
           customer_phone: customerPhone
         },
         order_meta: {
-          return_url: `https://code-sketch-rw9v.vercel.app/credits/credits?order_id=${orderId}`, 
+          return_url: `https://code-sketch-rw9v.vercel.app/credits?order_id=${orderId}`, 
         }
       },
       {
