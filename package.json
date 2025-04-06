@@ -11,6 +11,7 @@
     "db:migrate": "drizzle-kit migrate"
   },
   "dependencies": {
+    "@cashfreepayments/cashfree-js": "^1.0.5",
     "@codesandbox/sandpack-react": "^2.20.0",
     "@codesandbox/sandpack-themes": "^2.0.21",
     "@neondatabase/serverless": "^0.10.4",
