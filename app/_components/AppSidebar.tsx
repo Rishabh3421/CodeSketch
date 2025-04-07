@@ -24,7 +24,7 @@ const items = [
         icon: Home,
     },
     {
-        title: "Design",
+        title: "Designs",
         url: "/designs",
         icon: Brush,
     },

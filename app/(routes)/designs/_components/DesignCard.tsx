@@ -1,5 +1,5 @@
 import Image from 'next/image';
-import Link from 'next/link'; // ✅ Import Link
+import Link from 'next/link'; 
 import React from 'react';
 import { RECORD } from '@/app/view-code/[uid]/page';
 import { Button } from '@/components/ui/button';
